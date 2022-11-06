@@ -21,13 +21,7 @@ $ poetry env use python3
 
 5. Add Waitress, Flask, SqlAlchemy, Alembic to poetry 
 ```
-$ poetry add waitress
-```
-$ poetry add Flask
-```
-$ poetry add sqlalchemy
-```
-$ poetry add alembic
+$ poetry update
 ```
 
 6. Shell poetry
