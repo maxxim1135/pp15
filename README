@@ -19,12 +19,30 @@ $ pyenv local 3.8.0
 $ poetry env use python3
 ```
 
-5. Add Waitress to poetry 
+5. Add Waitress, Flask, SqlAlchemy, Alembic to poetry 
 ```
-$ poetry add waitress 
+$ poetry add waitress
+```
+$ poetry add Flask
+```
+$ poetry add sqlalchemy
+```
+$ poetry add alembic
 ```
 
-6. Run App 
+6. Shell poetry
 ```
-$ poetry run python waitress_server.py
+$ poetry shell
+```
+
+7. Add migration
+```
+$ alembic revision --autogenerate -m "Create models"
+```
+$ alembic upgrade head
+```
+
+8. Run App 
+```
+$ waitress:serve app:app
 ```
