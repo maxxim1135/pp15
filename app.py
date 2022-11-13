@@ -24,9 +24,8 @@ def add_medicine():
         t_med = db_utils.create_entry(Medicine, **med_data)
         return jsonify(MedicineData().dump(t_med))
 
-    except exceptions.ValidationError:
-        return jsonify({"error": "Invalid input"}), 405
-    # you can add MethodNotAllowed exception to better stability
+    except exceptions.ValidationError as err:
+        return str(err), 405
 
 
 @app.route("/api/v1/medicine/<int:medicine_id>", methods=["GET"])
@@ -59,10 +58,19 @@ def delete_medicine_by_id(medicine_id):
     if Session.query(Medicine).filter_by(id=medicine_id).count() == 0:
         return jsonify({"Error": "Medicine not found"}), 404
 
-    Session.query(Medicine).filter_by(id=medicine_id).delete()
-    # Session.query(MedOrder).filter_by(MedOrder.medicine_id=medicine_id).delete()
-    Session.commit()
-    return jsonify({"Succes": "Medicine deleted"}), 200
+    try:
+        Session.query(MedOrder).filter(MedOrder.medicine_id == medicine_id).delete()
+        Session.query(Demand).filter(Demand.medicine_id == medicine_id).delete()
+        Session.query(Medicine).filter(Medicine.id == medicine_id).delete()
+
+        Session.commit()
+        return jsonify({"Succes": "Medicine deleted"}), 200
+
+    except exc.NoResultFound:
+        return jsonify("Error404: Medicine not found"), 404
+
+    except:
+        return "something went wrong";
 
 
 # PHARMACY (ORDER)
@@ -119,7 +127,7 @@ def add_demand():
     except exceptions.ValidationError:
         return jsonify({"error": "Invalid input"}), 405
     except IntegrityError as err:
-        return str(err), 401
+        return jsonify({"error": "IntegrityError"}), 401
 
 
 #not working
@@ -132,7 +140,7 @@ def delete_demand():
     if Session.query(Demand).filter(and_(Demand.user_id == user_id, Demand.medicine_id == medicine_id)).count() == 0:
         return jsonify({"Error": "Demand not found"}), 404
 
-    Session.query(Demand).filter(and_(Demand.user_id == user_id, Demand.medicine_id == medicine_id)).delete().one()
+    Session.query(Demand).filter(and_(Demand.user_id == user_id, Demand.medicine_id == medicine_id)).delete()
     Session.commit()
     return "Demand deleted", 200
 
@@ -188,9 +196,19 @@ def delete_user(user_id):
     if Session.query(User).filter_by(id=user_id).count() == 0:
         return jsonify({"Error": "User not found"}), 404
 
-    Session.query(User).filter_by(id=user_id).delete()
-    Session.commit()
-    return "User deleted", 200
+    try:
+        Session.query(MedOrder).filter(MedOrder.user_id == user_id).delete()
+        Session.query(Demand).filter(Demand.user_id == user_id).delete()
+        Session.query(User).filter(User.id == user_id).delete()
+
+        Session.commit()
+        return jsonify({"Succes": "User deleted"}), 200
+
+    except exc.NoResultFound:
+        return jsonify("Error404: Medicine not found"), 404
+
+    except:
+        return "something went wrong";
 
 
 if __name__ == '__main__':

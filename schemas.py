@@ -4,15 +4,14 @@ from marshmallow import validate, Schema, fields, ValidationError
 from models import *
 
 
-def validate_id_user(id_user):
-    if Session.query(User).filter_by(user_id=id_user).count() == 0:
-        return False
-    return True
-
-
 def validate_email(email):
     if not (Session.query(User).filter(User.email == email).count() == 0):
         raise ValidationError("Email exists")
+
+
+def validate_medicine(name):
+    if not (Session.query(Medicine).filter(Medicine.name == name).count() == 0):
+        raise ValidationError("Such medicine already supplied")
 
 
 class UserToDo(Schema):
@@ -47,7 +46,7 @@ class UserToUpdate(Schema):
 
 
 class MedicineToDo(Schema):
-    name = fields.String()
+    name = fields.String(validate=validate_medicine)
     price = fields.Integer()
     description = fields.String()
     quantity = fields.Integer()
@@ -64,7 +63,7 @@ class MedicineData(Schema):
 
 
 class MedicineToUpdate(Schema):
-    name = fields.String()
+    name = fields.String(validate=validate_medicine)
     price = fields.Integer()
     description = fields.String()
     quantity = fields.Integer()
