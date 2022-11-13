@@ -2,15 +2,15 @@ from sqlalchemy import create_engine, Column, Integer, String, DECIMAL, Boolean,
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
 from models import *
 
-engine = create_engine('mysql://root:123456@localhost:3306/ppdb')
+engine = create_engine('mssql+pymssql://sa:Pass123!@localhost/pp_var_15')
 SessionFactory = sessionmaker(bind=engine)
 Session = scoped_session(SessionFactory)
 Base = declarative_base()
 
 
 users = [
-    User(username="BrianMay123", firstName="Brian", lastName="May", phone=1231231231, userStatus=1, email="brianmay@gmail.com", password="oaoa13o132"),
-    User(username="JimPage", firstName="Jimmy", lastName="Page", phone=151141241, userStatus=2, email="jimmypage@gmail.com", password="straesthedan")
+    User(username="BrianMay123", firstName="Brian", lastName="May", phone=1231231231, email="brianmay@gmail.com", password="oaoa13o132", isAdmin=False),
+    User(username="JimPage", firstName="Jimmy", lastName="Page", phone=151141241, email="jimmypage@gmail.com", password="straesthedan", isAdmin=True)
 ]
 
 medicines = [

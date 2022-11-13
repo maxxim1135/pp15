@@ -8,6 +8,10 @@ def validate_email(email):
     if not (Session.query(User).filter(User.email == email).count() == 0):
         raise ValidationError("Email exists")
 
+def validate_username(username):
+    if Session.query(User).filter(User.username == username).count() > 0:
+        raise ValidationError("UserName exists")
+
 
 def validate_medicine(name):
     if not (Session.query(Medicine).filter(Medicine.name == name).count() == 0):
@@ -24,6 +28,10 @@ class UserToDo(Schema):
     password = fields.Function(
         deserialize=lambda obj: generate_password_hash(obj), load_only=True
     )
+
+class UserLogin(Schema):
+    username = fields.String()
+    password = fields.String()
 
 
 class UserData(Schema):

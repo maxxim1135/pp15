@@ -2,22 +2,41 @@ from flask import Flask, jsonify, request
 import db_utils
 from schemas import *
 from models import *
-# import exceptions
 from marshmallow import exceptions
-# from sqlalchemy.orm import exc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import exc
+from flask_httpauth import HTTPBasicAuth
+from flask_bcrypt import check_password_hash
 
 app = Flask(__name__)
+auth = HTTPBasicAuth()
+
+@auth.verify_password
+def verify_password(username, password):
+    try:
+        user = Session.query(User).filter_by(username=username).one()
+        if check_password_hash(user.password,password):
+            return username
+    except exc.NoResultFound:
+        return False
 
 
-@app.route('/api/v1/hello-world-15/')
-def hello():
-    return 'Hello, World 15'
+@auth.get_user_roles
+def get_user_roles(user):
+    try:
+        user_db = Session.query(User).filter_by(username=user).one()
+        if user_db.isAdmin:
+            return 'admin'
+        else:
+            return ''
+    except exc.NoResultFound:
+        return ''
+
 
 
 # MEDICINE
 @app.route("/api/v1/medicine", methods=["POST"])
+@auth.login_required(role='admin')
 def add_medicine():
     try:
         med_data = MedicineToDo().load(request.json)
@@ -39,6 +58,7 @@ def get_medicine_by_id(medicine_id):
 
 
 @app.route("/api/v1/medicine/<int:medicine_id>", methods=["PUT"])
+@auth.login_required(role='admin')
 def upd_medicine_by_id(medicine_id):
     try:
         medicine_data = MedicineToUpdate().load(request.json)
@@ -54,6 +74,7 @@ def upd_medicine_by_id(medicine_id):
 
 
 @app.route("/api/v1/medicine/<int:medicine_id>", methods=["DELETE"])
+@auth.login_required(role='admin')
 def delete_medicine_by_id(medicine_id):
     if Session.query(Medicine).filter_by(id=medicine_id).count() == 0:
         return jsonify({"Error": "Medicine not found"}), 404
@@ -70,14 +91,20 @@ def delete_medicine_by_id(medicine_id):
         return jsonify("Error404: Medicine not found"), 404
 
     except:
-        return "something went wrong";
+        return "something went wrong"
 
 
 # PHARMACY (ORDER)
 @app.route("/api/v1/pharmacy/medorder", methods=["POST"])
+@auth.login_required()
 def add_order():
     try:
         med_data = MedOrderToDo().load(request.json)
+
+        user = get_user_by_username(auth.username())
+        if user.id != med_data.get('user_id') and not user.isAdmin:
+            return "Authorization error", 403
+
         t_med_ord = db_utils.create_entry(MedOrder, **med_data)
         return jsonify(MedicineData().dump(t_med_ord))
 
@@ -89,9 +116,15 @@ def add_order():
 
 
 @app.route("/api/v1/pharmacy/medorder/<int:order_id>", methods=["GET"])
+@auth.login_required()
 def get_order_by_id(order_id):
     try:
         order = db_utils.get_entry_byid(MedOrder, order_id)
+
+        user = get_user_by_username(auth.username())
+        if user.id != order.user_id and not user.isAdmin:
+            return "Authorization error", 403
+
         return jsonify(MedOrderData().dump(order)), 200
 
     except exc.NoResultFound:
@@ -99,9 +132,15 @@ def get_order_by_id(order_id):
 
 
 @app.route("/api/v1/pharmacy/medorder/<int:order_id>", methods=["DELETE"])
+@auth.login_required()
 def delete_order_by_id(order_id):
     if Session.query(MedOrder).filter_by(id=order_id).count() == 0:
         return jsonify({"Error": "Order not found"}), 404
+
+    order = Session.query(MedOrder).filter_by(id=order_id).one()
+    user = get_user_by_username(auth.username())
+    if user.id != order.user_id and not user.isAdmin:
+        return "Authorization error", 403
 
     Session.query(MedOrder).filter_by(id=order_id).delete()
     Session.commit()
@@ -109,9 +148,15 @@ def delete_order_by_id(order_id):
 
 
 @app.route("/api/v1/pharmacy/demand/<int:medicine_id>", methods=["GET"])
+@auth.login_required()
 def get_demand_by_id(medicine_id):
     try:
         demand = Session.query(Demand).filter_by(medicine_id=medicine_id).one()
+
+        user = get_user_by_username(auth.username())
+        if user.id != demand['user_id'] and not user.isAdmin:
+            return "Authorization error", 403
+
         return jsonify(DemandData().dump(demand)), 200
 
     except exc.NoResultFound:
@@ -119,9 +164,15 @@ def get_demand_by_id(medicine_id):
 
 
 @app.route("/api/v1/pharmacy/demand/", methods=["POST"])
+@auth.login_required()
 def add_demand():
     try:
         demand_data = DemandToDo().load(request.json)
+
+        user = get_user_by_username(auth.username())
+        if user.id != demand_data['user_id'] and not user.isAdmin:
+            return "Authorization error", 403
+
         t_demand = db_utils.create_entry(Demand, **demand_data)
         return jsonify(DemandData().dump(t_demand)), 200
     except exceptions.ValidationError:
@@ -129,13 +180,17 @@ def add_demand():
     except IntegrityError as err:
         return jsonify({"error": "IntegrityError"}), 401
 
-
-#not working
 @app.route("/api/v1/pharmacy/demand", methods=["DELETE"])
+@auth.login_required()
 def delete_demand():
-    args = request.args
+    args = request.json
     user_id = args.get('user_id')
     medicine_id = args.get('medicine_id')
+
+    user = get_user_by_username(auth.username())
+
+    if str(user.id) != str(user_id) and not user.isAdmin:
+        return "Authorization error", 403
 
     if Session.query(Demand).filter(and_(Demand.user_id == user_id, Demand.medicine_id == medicine_id)).count() == 0:
         return jsonify({"Error": "Demand not found"}), 404
@@ -146,28 +201,32 @@ def delete_demand():
 
 
 # USER
+
 @app.route("/api/v1/user", methods=["POST"])
 def add_user():
     try:
+        user = get_user_by_username(auth.username())
         user_data = UserToDo().load(request.json)
+        user_data['isAdmin'] = user.isAdmin
         t_user = db_utils.create_entry(User, **user_data)
         return jsonify(UserData().dump(t_user)), 200
     except ValidationError as err:
         return str(err), 405
+    except exc.NoResultFound:
+        return "Authorization error", 403
 
-
-@app.route("/api/v1/user/login", methods=["GET"])
-def login_user():
-    return "test"
-
-
-@app.route("/api/v1/user/logout", methods=["GET"])
-def logout_user():
-    return "test"
 
 
 @app.route("/api/v1/user/<int:user_id>", methods=["GET"])
+@auth.login_required
 def get_user_by_id(user_id):
+    print(auth.username())
+    user = get_user_by_username(auth.username())
+    print(user.id)
+    print(user_id)
+    if user.id != user_id and not user.isAdmin:
+        return "Authorization error", 403
+
     try:
         user = db_utils.get_entry_byid(User, user_id)
         return jsonify(UserData().dump(user)), 200
@@ -176,8 +235,11 @@ def get_user_by_id(user_id):
 
 
 @app.route("/api/v1/user/<int:user_id>", methods=["PUT"])
+@auth.login_required
 def upd_user(user_id):
-    # fix swagger
+    user = get_user_by_username(auth.username())
+    if user.id != user_id and not user.isAdmin:
+        return "Authorization error", 403
     try:
         user_data = UserToUpdate().load(request.json)
         user = db_utils.get_entry_byid(User, user_id)
@@ -193,6 +255,10 @@ def upd_user(user_id):
 
 @app.route("/api/v1/user/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id):
+    user = get_user_by_username(auth.username())
+    if user.id != user_id and not user.isAdmin:
+        return "Authorization error", 403
+
     if Session.query(User).filter_by(id=user_id).count() == 0:
         return jsonify({"Error": "User not found"}), 404
 
@@ -210,6 +276,8 @@ def delete_user(user_id):
     except:
         return "something went wrong";
 
+def get_user_by_username(username):
+    return Session.query(User).filter_by(username=username).one()
 
 if __name__ == '__main__':
     app.run(debug=True)

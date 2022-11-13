@@ -2,31 +2,22 @@ from sqlalchemy import create_engine, Column, Integer, String, DECIMAL, Boolean,
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session, relationship
 from sqlalchemy import and_
 
-engine = create_engine('mysql://root:123456@localhost:3306/ppdb')
+engine = create_engine('mssql+pymssql://sa:Pass123!@localhost/pp_var_15')
 SessionFactory = sessionmaker(bind=engine)
 Session = scoped_session(SessionFactory)
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = "user"
 
-class Demand(Base):
-    __tablename__ = "demand"
-
-    user_id = Column(ForeignKey("user.id"), primary_key=True)
-    medicine_id = Column(ForeignKey("medicines.id"), primary_key=True)
-    quantity = Column(Integer)
-
-    child = relationship("Medicine")
-
-
-# class MedOrd(Base):
-#     __tablename__ = "med_ord"
-#
-#     order_id = Column(ForeignKey("order.id"), primary_key=True)
-#     medicine_id = Column(ForeignKey("medicines.id"), primary_key=True)
-#     quantity = Column(Integer)
-#
-#     child = relationship("Medicine")
-
+    id = Column('id', Integer, primary_key=True)
+    username = Column('username', String(45), nullable=False)
+    firstName = Column('firstName', String(45), nullable=False)
+    lastName = Column('lastName', String(45), nullable=False)
+    phone = Column('phone', Integer, nullable=False)
+    isAdmin = Column('isAdmin', Boolean, nullable=False)
+    email = Column('email', String(45), nullable=False)
+    password = Column('password', String(400), nullable=False)
 
 class Medicine(Base):
     __tablename__ = "medicines"
@@ -38,30 +29,20 @@ class Medicine(Base):
     quantity = Column('quantity', Integer, nullable=False)
     availability = Column('availability', Boolean, nullable=False)
 
-
-class User(Base):
-    __tablename__ = "user"
+class Demand(Base):
+    __tablename__ = "demand"
 
     id = Column('id', Integer, primary_key=True)
-    username = Column('username', String(45), nullable=False)
-    firstName = Column('firstName', String(45), nullable=False)
-    lastName = Column('lastName', String(45), nullable=False)
-    phone = Column('phone', Integer, nullable=False)
-    userStatus = Column('userStatus', Integer, nullable=False)
-    email = Column('email', String(45), nullable=False)
-    password = Column('password', String(400), nullable=False)
-
-    children = relationship("Demand")
-
+    user_id = Column('user_id',ForeignKey(User.id))
+    medicine_id = Column('medicine_id', ForeignKey(Medicine.id))
+    quantity = Column(Integer)
 
 class MedOrder(Base):
     __tablename__ = "medorder"
 
     id = Column('id', Integer, primary_key=True)
     price = Column('price', DECIMAL(10, 2), nullable=False)
-    user_id = Column('user_id', Integer, ForeignKey("user.id"))
-    medicine_id = Column('medicine_id', Integer, ForeignKey("medicines.id"))
-    quantity = Column(Integer)
-
-    children = relationship("Medicine")
+    user_id = Column('user_id', Integer, ForeignKey(User.id))
+    medicine_id = Column('medicine_id', Integer, ForeignKey(Medicine.id))
+    quantity = Column('quantity', Integer)
 
