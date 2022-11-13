@@ -7,8 +7,8 @@ servers:
 tags:
   - name: medicine
     description: Everything about medicine
-  - name: pharmcy
-    description: Access to Pharmcy orders
+  - name: pharmacy
+    description: Access to Pharmacy orders
   - name: user
     description: Operations about user or pharmacist
 paths:
@@ -32,29 +32,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/medicine'          
+                $ref: '#/components/schemas/medicine'
         '405':
           description: Invalid input
       security:
       - pharmacist_auth:
-        - write:user
-    get:
-      tags:
-        - medicine
-      summary: Find medicines
-      description: Returns a medicines
-      operationId: getMedicine
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/mass_medicine'         
-      security:
-      - pharmacist_auth:
-        - write:user
-      - user_auth:
         - write:user
   /medicine/{Id}:
     get:
@@ -77,7 +59,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/medicine'          
+                $ref: '#/components/schemas/medicine'
         '400':
           description: Invalid ID supplied
         '404':
@@ -133,11 +115,11 @@ paths:
       security:
       - pharmacist_auth:
         - write:user
-  
-  /pharmcy/order:
+
+  /pharmacy/order:
     post:
       tags:
-        - pharmcy
+        - pharmacy
       summary: Place an order for a medicine
       description: Place a new order in the pharmcy
       operationId: placeOrder
@@ -158,10 +140,10 @@ paths:
       security:
       - user_auth:
         - write:user
-  /pharmcy/order/{Id}:
+  /pharmacy/order/{Id}:
     get:
       tags:
-        - pharmcy
+        - pharmacy
       summary: Find purchase order by ID
       operationId: getOrderById
       parameters:
@@ -178,7 +160,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'          
+                $ref: '#/components/schemas/Order'
         '400':
           description: Invalid ID supplied
         '404':
@@ -188,7 +170,7 @@ paths:
         - write:user
     delete:
       tags:
-        - pharmcy
+        - pharmacy
       summary: Delete purchase order by ID
       operationId: deleteOrder
       parameters:
@@ -209,10 +191,10 @@ paths:
       security:
       - user_auth:
         - write:user
-  /pharmcy/demand:
+  /pharmacy/demand:
     post:
       tags:
-        - pharmcy
+        - pharmacy
       summary: Add medicine to demand
       operationId: addDemand
       requestBody:
@@ -234,7 +216,7 @@ paths:
         - write:user
     get:
       tags:
-        - pharmcy
+        - pharmacy
       summary: Find medicines
       description: Returns a medicines
       operationId: getDemand
@@ -244,7 +226,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/demand'  
+                $ref: '#/components/schemas/demand'
       security:
       - pharmacist_auth:
         - write:user
@@ -264,12 +246,15 @@ paths:
             schema:
               $ref: '#/components/schemas/User'
       responses:
-        default:
+        200:
           description: successful operation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '405':
+          description: Invalid input
+
   /user/login:
     get:
       tags:
@@ -346,7 +331,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserInfo'          
+                $ref: '#/components/schemas/UserInfo'
         '400':
           description: Invalid username supplied
         '404':
@@ -376,15 +361,23 @@ paths:
             schema:
               $ref: '#/components/schemas/User'
       responses:
-        default:
+        '200':
           description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
       security:
       - user_auth:
         - write:user
     delete:
       tags:
         - user
-      summary: Delete user 
+      summary: Delete user
       description: This can only be done by the logged in user.
       operationId: deleteUser
       parameters:
@@ -397,8 +390,6 @@ paths:
       responses:
         '200':
           description: successful operation
-        '400':
-          description: Invalid username supplied
         '404':
           description: User not found
       security:
