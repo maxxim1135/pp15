@@ -4,7 +4,7 @@ from schemas import *
 from models import *
 # import exceptions
 from marshmallow import exceptions
-# from sqlalchemy.orm import exc
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import exc
 
@@ -130,7 +130,6 @@ def add_demand():
         return jsonify({"error": "IntegrityError"}), 401
 
 
-#not working
 @app.route("/api/v1/pharmacy/demand", methods=["DELETE"])
 def delete_demand():
     args = request.args
