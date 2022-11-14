@@ -205,9 +205,22 @@ def delete_demand():
 @app.route("/api/v1/user", methods=["POST"])
 def add_user():
     try:
+        user_data = UserToDo().load(request.json)
+        user_data['isAdmin'] = False
+        t_user = db_utils.create_entry(User, **user_data)
+        return jsonify(UserData().dump(t_user)), 200
+    except ValidationError as err:
+        return str(err), 405
+    except exc.NoResultFound:
+        return "Authorization error", 403
+
+@auth.login_required(role='admin')
+@app.route("/api/v1/user/admin", methods=["POST"])
+def add_user_admin():
+    try:
         user = get_user_by_username(auth.username())
         user_data = UserToDo().load(request.json)
-        user_data['isAdmin'] = user.isAdmin
+        user_data['isAdmin'] = True
         t_user = db_utils.create_entry(User, **user_data)
         return jsonify(UserData().dump(t_user)), 200
     except ValidationError as err:
@@ -254,6 +267,7 @@ def upd_user(user_id):
 
 
 @app.route("/api/v1/user/<int:user_id>", methods=["DELETE"])
+@auth.login_required
 def delete_user(user_id):
     user = get_user_by_username(auth.username())
     if user.id != user_id and not user.isAdmin:

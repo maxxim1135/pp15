@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: f2c9f5284850
+Revision ID: 4dd8344e7f69
 Revises: 
-Create Date: 2022-11-13 12:54:22.797426
+Create Date: 2022-11-13 08:43:06.861757
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'f2c9f5284850'
+revision = '4dd8344e7f69'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,18 +33,19 @@ def upgrade() -> None:
     sa.Column('firstName', sa.String(length=45), nullable=False),
     sa.Column('lastName', sa.String(length=45), nullable=False),
     sa.Column('phone', sa.Integer(), nullable=False),
-    sa.Column('userStatus', sa.Integer(), nullable=False),
+    sa.Column('isAdmin', sa.Boolean(), nullable=False),
     sa.Column('email', sa.String(length=45), nullable=False),
     sa.Column('password', sa.String(length=400), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('demand',
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('medicine_id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('medicine_id', sa.Integer(), nullable=True),
     sa.Column('quantity', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['medicine_id'], ['medicines.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
-    sa.PrimaryKeyConstraint('user_id', 'medicine_id')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('medorder',
     sa.Column('id', sa.Integer(), nullable=False),
