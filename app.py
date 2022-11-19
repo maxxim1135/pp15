@@ -85,7 +85,7 @@ def add_order():
         return jsonify({"error": "Invalid input"}), 405
 
     except IntegrityError as err:
-        return str(err), 401
+        return jsonify({"error": "IntegrityError"}), 401
 
 
 @app.route("/api/v1/pharmacy/medorder/<int:order_id>", methods=["GET"])
@@ -124,7 +124,7 @@ def add_demand():
         demand_data = DemandToDo().load(request.json)
         t_demand = db_utils.create_entry(Demand, **demand_data)
         return jsonify(DemandData().dump(t_demand)), 200
-    except exceptions.ValidationError:
+    except ValidationError:
         return jsonify({"error": "Invalid input"}), 405
     except IntegrityError as err:
         return jsonify({"error": "IntegrityError"}), 401
